@@ -1,6 +1,9 @@
-import {defineConfig,defineCollection,s} from "velite"
-
-const computedFields = <T extends {slug : string}>(data:T)=>({
+import { defineConfig, defineCollection, s } from "velite"
+import rehypeSlug from "rehype-slug"
+import rehypePrettyCode from "rehype-pretty-code"
+import rehypeAutolinkHeadings from "rehype-autolink-headings"
+import theme from "tailwindcss/defaultTheme"
+const computedFields = <T extends { slug: string }>(data: T) => ({
     ...data,
     slugAsParams: data.slug.split("/").slice(1).join("/"),
 })
@@ -19,17 +22,17 @@ const posts = defineCollection({
 })
 
 export default defineConfig({
-    root:"content",
-    output:{
+    root: "content",
+    output: {
         data: ".velite",
         assets: "public",
         base: "/static/",
-        name:"[name]-[hash:6].[ext]",
-        clean:true,
+        name: "[name]-[hash:6].[ext]",
+        clean: true,
     },
-    collections: {posts},
-    mdx:{
-        rehypePlugins:[],
-        remarkPlugins:[],
+    collections: { posts },
+    mdx: {
+        rehypePlugins: [rehypeSlug, [rehypePrettyCode, { theme: "github-dark" }], [rehypeAutolinkHeadings, { behavior: "wrap", properties: { className: ["subheading-anchor"], ariaLabel: "Link to section" } }]],
+        remarkPlugins: [],
     }
 })
