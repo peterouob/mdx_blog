@@ -12,7 +12,7 @@ const posts = defineCollection({
         slug: s.path(),
         title: s.string(),
         description: s.string().max(99),
-        data: s.isodate(),
+        date: s.isodate(),
         published: s.boolean().default(true),
         body: s.mdx(),
     }).transform(computedFields),
