@@ -4,6 +4,7 @@ import {cn} from "@/lib/utils";
 import {buttonVariants} from "@/components/ui/button";
 import {Icons} from "@/components/icon";
 import {MainNav} from "@/components/main-nav";
+import {MobileNav} from "@/components/mobile-nav";
 
 export function SiteHeader(){
     return (
@@ -15,18 +16,19 @@ export function SiteHeader(){
                     <nav className="flex items-center">
 
                         <Link href={siteConfig.links.instagram} target="_blank" rel="noreferrer">
-                            <div className={cn(buttonVariants({variant: "ghost"}),"w-10 px-0")}>
+                            <div className={cn(buttonVariants({variant: "ghost"}),"w-10 px-0 hidden sm:inline-flex")}>
                                 <Icons.instagram className="h-6 w-6" />
                                 <span className="sr-only">Instagram</span>
                             </div>
                         </Link>
 
                         <Link href={siteConfig.links.github} target="_blank" rel="noreferrer">
-                            <div className={cn(buttonVariants({variant: "ghost"}),"w-10 px-0")}>
+                            <div className={cn(buttonVariants({variant: "ghost"}),"w-10 px-0 hidden sm:inline-flex")}>
                                 <Icons.github className="h-6 w-6" />
                                 <span className="sr-only">GitHub</span>
                             </div>
                         </Link>
+                        <MobileNav />
                     </nav>
                 </div>
             </div>

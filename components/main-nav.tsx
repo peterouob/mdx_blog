@@ -15,12 +15,12 @@ export function MainNav() {
                 {/*<Icons.logo className="h-8 w-8"/>*/}
                 <span className="font-bold">{siteConfig.name}</span>
             </Link>
-            <Link href="/blog" className={cn("text-sm font-medium transition-colors hover:text-primary",
+            <Link href="/blog" className={cn("text-sm font-medium transition-colors hover:text-primary hidden sm:block",
                 pathname === "/blog" ? "text-foreground" : "text-foreground/60")}>
                 Blog
             </Link>
 
-            <Link href="/about" className={cn("text-sm font-medium transition-colors hover:text-primary",
+            <Link href="/about" className={cn("text-sm font-medium transition-colors hover:text-primary hidden sm:block",
                 pathname === "/about" ? "text-foreground" : "text-foreground/60")}>
                 About
             </Link>
