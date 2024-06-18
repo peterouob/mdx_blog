@@ -4,8 +4,8 @@ export const siteConfig = {
     description: "Nextjs 14",
     authors: "Peter",
     links: {
-        instagram:"",
-        github:"",
+        instagram:"https://www.instagram.com/o_u_o_b_/",
+        github:"https://github.com/peterouob?tab=repositories",
     }
 }
 

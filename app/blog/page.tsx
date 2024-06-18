@@ -53,7 +53,7 @@ export default async function BlogPage({searchParams}:BlogPageProps){
                     : <p>Nothing to see here yet</p>}
                     <QueryPagination totalPages= {totalPages} className="justify-end mt-4"/>
                 </div>
-                <Card className="col-span-12 row-start-3 h-fit sm:col-span-4 sm:col-start-9 sm:row-start-1">
+                <Card className="col-span-12 row-start-3  h-fit sm:col-span-4 sm:col-start-9 sm:row-start-1">
                     <CardHeader>
                         <CardTitle>Tags</CardTitle>
                         <CardContent className="flex flex-wrap gap-2">
