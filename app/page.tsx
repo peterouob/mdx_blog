@@ -43,7 +43,9 @@ export default function Home() {
                   <PostItem slug={post.slug}
                             title={post.title}
                             description={post.description}
-                            date={post.date} />
+                            date={post.date}
+                            tags={post.tags
+                  }/>
             </li>)}
           </ul>
         </section>

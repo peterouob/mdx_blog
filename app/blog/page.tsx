@@ -32,12 +32,14 @@ export default async function BlogPage({searchParams}:BlogPageProps){
             <hr className="mt-8" />
             {displayPosts?.length > 0 ? (<ul className="flex flex-col">
                     {displayPosts.map(post=>{
-                        const {slug,date,title,description} = post
+                        const {slug,date,title,description,tags} = post
                         return <li key={slug}>
                             <PostItem slug={ slug}
                                       title={title}
                                       date={date}
-                                      description={description} />
+                                      description={description}
+                                      tags={tags}
+                            />
                         </li>
                     })}
                 </ul>)
