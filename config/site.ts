@@ -6,6 +6,7 @@ export const siteConfig = {
     links: {
         instagram:"https://www.instagram.com/o_u_o_b_/",
         github:"https://github.com/peterouob?tab=repositories",
+        gitlab:"https://gitlab.com/peterouob",
     }
 }
 

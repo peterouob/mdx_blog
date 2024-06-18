@@ -28,6 +28,13 @@ export function SiteHeader(){
                                 <span className="sr-only">Github</span>
                             </div>
                         </Link>
+
+                        <Link href={siteConfig.links.gitlab} target="_blank" rel="noreferrer">
+                            <div className={cn(buttonVariants({variant: "ghost"}),"w-10 mt-5 px-0 hidden sm:inline-flex")}>
+                                <Icons.gitlab className="h-8 w-8" />
+                                <span className="sr-only">Gitlab</span>
+                            </div>
+                        </Link>
                         <ModeToggle />
                         <MobileNav />
                     </nav>

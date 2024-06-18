@@ -26,8 +26,6 @@ export function MobileNav() {
                 <div className="flex flex-col gap-3 mt-3">
                     <MobileLink onOpenChange={setOpen} href="/blog">Blog</MobileLink>
                     <MobileLink onOpenChange={setOpen} href="/about">About</MobileLink>
-                    <Link target="_blank" rel="noreferrer" href={siteConfig.links.github}>Github</Link>
-                    <Link target="_blank" rel="noreferrer" href={siteConfig.links.instagram}>Instagram</Link>
                 </div>
             </SheetContent>
         </Sheet>

@@ -19,6 +19,11 @@ export function SiteFooter(){
                     <span className="sr-only">Instagram</span>
                     <Icons.instagram className="h-8 w-8" />
                 </a>
+
+                <a target="_blank" rel="noreferrer" href={siteConfig.links.gitlab}>
+                    <span className="sr-only">Gitlab</span>
+                    <Icons.gitlab className="h-8 w-8" />
+                </a>
             </div>
             <div className="mb-2 flex space-x-2 text-sm text-muted-foreground">
                 {siteConfig.authors}
