@@ -40,7 +40,7 @@ export function QueryPagination({totalPages,className}:QueryPaginationProps){
                         {index + 1}
                     </PaginationLink>
                 </PaginationItem>)}
-                {prevPages <= totalPages ? (
+                {nextPages <= totalPages ? (
                     <PaginationItem>
                         <PaginationNext href={createPageURL(nextPages)} />
                     </PaginationItem>
