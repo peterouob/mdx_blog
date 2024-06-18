@@ -1,6 +1,5 @@
 export const siteConfig = {
     name: "Peter",
-    url: "https://example.com",
     description: "Nextjs 14",
     authors: "Peter",
     links: {

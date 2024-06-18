@@ -1,13 +1,12 @@
 "use client"
 
-import React, {useState} from "react";
-import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet";
-import {Button} from "@/components/ui/button";
-import {Menu} from "lucide-react";
-import Link, {LinkProps} from "next/link";
-import {router} from "next/client";
-import {Icons} from "@/components/icon";
-import {siteConfig} from "@/config/site";
+import { useState } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Button } from "./ui/button";
+import { Menu } from "lucide-react";
+import Link, { LinkProps } from "next/link";
+import { useRouter } from "next/navigation";
+import { siteConfig } from "@/config/site";
 
 export function MobileNav() {
     const [open,setOpen] = useState(false)
@@ -36,27 +35,30 @@ export function MobileNav() {
 }
 
 interface MobileLinkProps extends LinkProps {
-    children : React.ReactNode,
-    onOpenChange?: (open:boolean)=>void
-    className?: string
+    children: React.ReactNode;
+    onOpenChange?: (open: boolean) => void;
+    className?: string;
 }
 
 function MobileLink({
-    href,
-    onOpenChange,
-    children,
-    className,
-    ...props
-} : MobileLinkProps) {
-    return <Link
+                        href,
+                        onOpenChange,
+                        children,
+                        className,
+                        ...props
+                    }: MobileLinkProps) {
+    const router = useRouter();
+    return (
+        <Link
             href={href}
-            onClick={()=>{
-                router.push(href.toString())
-                onOpenChange?.(false)
+            onClick={() => {
+                router.push(href.toString());
+                onOpenChange?.(false);
             }}
-        {...props}
             className={className}
-    >
-        {children}
-    </Link>
+            {...props}
+        >
+            {children}
+        </Link>
+    );
 }
