@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import {Post} from "@/.velite";
+import {slug} from "github-slugger";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -38,4 +39,12 @@ export  function getAllTags(posts: Array<Post>) {
 export function sortTagsByCount(tags: Record<string, number>){
   // 最多次的放在頂部
   return Object.keys(tags).sort((a,b)=>tags[b]-tags[a])
+}
+
+export function getPostsByTagsSlug(posts:Array<Post>,tag: string){
+  return posts.filter(post=>{
+    if(!post.tags) return false
+    const slugfiedTags = post.tags.map(tag=>slug(tag))
+    return slugfiedTags.includes(tag)
+  })
 }
