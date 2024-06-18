@@ -1,9 +1,24 @@
 import {posts} from "#site/content"
 import {PostItem} from "@/components/post-item";
 import {sortPosts} from "@/lib/utils";
+import {QueryPagination} from "@/components/query-pagination";
 
-export default async function BlogPage(){
-    const displayPosts = sortPosts(posts.filter((post) => post.published))
+const POST_PRE_PAGE = 5
+
+interface BlogPageProps {
+    searchParams:{
+        page?:string
+    }
+}
+export default async function BlogPage({searchParams}:BlogPageProps){
+    const currentPage = Number(searchParams?.page) || 1
+    const sortedPosts = sortPosts(posts.filter((post) => post.published))
+    const totalPages = Math.ceil(sortedPosts.length / POST_PRE_PAGE)
+    // 根據所在頁面每頁顯示多少
+    const displayPosts = sortedPosts.slice(
+        POST_PRE_PAGE * (currentPage - 1 ),
+        POST_PRE_PAGE * currentPage
+    )
     return (
         <div className="container max-w-4xl py-6 lg:py-10">
             <div className="flex flex-col items-start gap-4 md:flex-row md:justify-between md:gap-8">
@@ -25,8 +40,9 @@ export default async function BlogPage(){
                                       description={description} />
                         </li>
                     })}
-                </ul>) 
+                </ul>)
                 : <p>Nothing to see here yet</p>}
+            <QueryPagination totalPages= {totalPages} className="justify-end mt-4"/>
         </div>
     )
 }
