@@ -24,6 +24,9 @@ export default async function AboutPage(){
                 <p className="text-muted-foreground text-center break-words">
                     Developer
                 </p>
+                <p className=" text-center font-bold">
+                    反正也沒啥人喜歡你 <br/>不如拼一下讓別人來喜歡你
+                </p>
             </div>
                 <AboutContent className="prose dark:prose-invert flex gap-6 flex-wrap" />
         </div>
