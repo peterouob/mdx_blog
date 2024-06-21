@@ -1,8 +1,8 @@
 export const siteConfig = {
-    name: "Peter",
+    name: "Defer",
     url:"https://mdx-blog-nswpgarbs-peters-projects-cb5e2e0d.vercel.app",
     description: "Nextjs 14",
-    authors: "Peter",
+    authors: "Defer",
     links: {
         instagram:"https://www.instagram.com/o_u_o_b_/",
         github:"https://github.com/peterouob?tab=repositories",

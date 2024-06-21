@@ -1,5 +1,6 @@
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {siteConfig} from "@/config/site";
+import AboutContent from "@/components/about-content";
 
 export default async function AboutPage(){
     return <div className="container max-w-6xl py-6 lg:py-10">
@@ -24,9 +25,7 @@ export default async function AboutPage(){
                     Developer
                 </p>
             </div>
-            <p className="text-muted-foreground text-lg py-4">
-                Hello ....
-            </p>
+                <AboutContent className="prose dark:prose-invert flex gap-6 flex-wrap" />
         </div>
     </div>
 }
