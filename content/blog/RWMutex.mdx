@@ -1,0 +1,88 @@
+---
+title: RWMutex
+description: 從源碼分析RWMutex
+date: 2024-06-24
+tag:["go"]
+---
+
+### 分析RWMutex的基本結構
+
+```go
+type RWMutex struct {
+	w           Mutex        // held if there are pending writers
+	writerSem   uint32       // semaphore for writers to wait for completing readers
+	readerSem   uint32       // semaphore for readers to wait for completing writers
+	readerCount atomic.Int32 // number of pending readers
+	readerWait  atomic.Int32 // number of departing readers
+}
+
+const rwmutexMaxReaders = 1 << 30
+
+```
+
+- pending reader/writer 等待/持有這個鎖的reader/writer
+- departing reader 持有鎖但還沒釋放的reader
+
+### 分析RLock
+
+```go
+func (rw *RWMutex) RLock() {
+	if rw.readerCount.Add(1) < 0 {
+		// A writer is pending, wait for it.
+		runtime_SemacquireRWMutexR(&rw.readerSem, false, 0)
+	}
+}
+```
+
+- 因為有新的reader進來因此+1，這邊能夠理解。而為什麼為負數會在writer處說明
+- `runtime_SemacquireRWMutexR(&rw.readerSem, false, 0)` 當還有reader沒釋放鎖時，writer會獲取不到鎖，而這個函數的功能可以讓下一個新的reader沒辦法獲得鎖，以避免writer一直獲取不到鎖陷入飢餓模式
+
+### 分析RUnLock
+
+```go
+func (rw *RWMutex) RUnlock() {
+	if r := rw.readerCount.Add(-1); r < 0 {
+		// Outlined slow-path to allow the fast-path to be inlined
+		rw.rUnlockSlow(r)
+	}
+}
+```
+- 因為有新的reader離開因此-1，這邊能夠理解。而為什麼為負數會在writer處說明
+
+### 分析rUnlockSlow
+
+```go
+func (rw *RWMutex) rUnlockSlow(r int32) {
+	// A writer is pending.
+	if rw.readerWait.Add(-1) == 0 {
+		// The last reader unblocks the writer.
+		runtime_Semrelease(&rw.writerSem, false, 1)
+	}
+}
+```
+
+- `runtime_Semrelease(&rw.writerSem, false, 1)` 假設現在的reader為最後一個就會喚醒writer
+
+## 開始分析Writer
+
+### 分析Lock
+
+```go
+func (rw *RWMutex) Lock() {
+	// First, resolve competition with other writers.
+	rw.w.Lock()
+	// Announce to readers there is a pending writer.
+	r := rw.readerCount.Add(-rwmutexMaxReaders) + rwmutexMaxReaders
+	// Wait for active readers.
+	if r != 0 && rw.readerWait.Add(r) != 0 {
+		runtime_SemacquireRWMutex(&rw.writerSem, false, 0)
+	}
+}
+
+```
+- `rw.w.Lock()` 讓多個writer請求時只會有一個獲得鎖，其他會阻塞
+- `rw.readerCount.Add(-rwmutexMaxReaders) + rwmutexMaxReaders` 為重頭戲
+  - `rwmutexMaxReaders` 在上數宣吿為 1 << 30 =  1073741824，代表reader的數量不會超過此數
+  - 可以利用這一串公式推得
+    - r = v + 1073741824
+    - v = 1073741824 - r (v為有的數量)
