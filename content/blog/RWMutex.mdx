@@ -82,7 +82,7 @@ func (rw *RWMutex) Lock() {
 ```
 - `rw.w.Lock()` 讓多個writer請求時只會有一個獲得鎖，其他會阻塞
 - `rw.readerCount.Add(-rwmutexMaxReaders) + rwmutexMaxReaders` 為重頭戲
-  - `rwmutexMaxReaders` 在上數宣吿為 1 << 30 =  1073741824，代表reader的數量不會超過此數
+  - `rwmutexMaxReaders 在上數宣吿為 1 << 30 =  1073741824，代表reader的數量不會超過此數 `
   - 可以利用這一串公式推得
     - r = v + 1073741824
     - v = 1073741824 - r (v為有的數量)
