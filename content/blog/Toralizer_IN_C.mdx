@@ -1,19 +1,19 @@
 ---
-title: toralizer in C
-description: 使用C並運用tor完成一個簡單的proxy server
-date 2024-6-26
+title: toralizer in c
+description: 使用c並運用tor完成一個簡單的proxy server
+date: 2024-6-26
 tags: ["c","code","net"]
 ---
 
-## command to read C docs
+## command to read c docs
 - system call
   `man 2 socket`
 - library call
   `man 3 atoi`
 
 
-## argv in C
-```C
+## argv in c
+```c
 int main(int argc, char *argv[])
       ./toralize   1.2.3.4     80
 argv      0           1         2
@@ -28,14 +28,14 @@ argv      0           1         2
 ```text
 
 		+----+----+----+----+----+----+----+----+----+----+....+----+
-		| VN | CD | DSTPORT |      DSTIP        | USERID       |NULL|
+		| VN | cD | DSTPORT |      DSTIP        | USERID       |NULL|
 		+----+----+----+----+----+----+----+----+----+----+....+----+
  # of bytes:	   1    1      2              4           variable       1
 ```
 
-#### Use C to define
+#### Use c to define
 
-```C
+```c
 struct proxy_request
 {
     int8 vn;
@@ -52,14 +52,14 @@ typedef struct proxy_request Req;
 
 ```text
 		+----+----+----+----+----+----+----+----+
-		| VN | CD | DSTPORT |      DSTIP        |
+		| VN | cD | DSTPORT |      DSTIP        |
 		+----+----+----+----+----+----+----+----+
  # of bytes:	   1    1      2              4
 ```
 
-#### Use C to define
+#### Use c to define
 
-```C
+```c
 struct proxy_response
 {
     int8 vn;
@@ -83,7 +83,7 @@ all:
 
 ## Tor proxy socket 4
 
-```C
+```c
 int main(int argc, char *argv[])
 {
     char *host;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     host = argv[1];
     port = atoi(argv[2]);
 
-    s = socket(AF_INET, SOCK_STREAM, 0);
+    s = socket(AF_INET, SOcK_STREAM, 0);
     if (s < 0)
     {
         perror("socket");
@@ -116,14 +116,14 @@ int main(int argc, char *argv[])
         return -1;
     };
 
-    printf("Connected to proxy \n");
+    printf("connected to proxy \n");
     return 0;
 }
 ```
 
-## Finish define Request packet use C
+## Finish define Request packet use c
 
-```C
+```c
 Req *request(const char *dstip, const int dstport)
 {
     Req *req;
@@ -141,9 +141,9 @@ Req *request(const char *dstip, const int dstport)
 };
 ```
 
-## Finish send req and receive use C
+## Finish send req and receive use c
 
-```C
+```c
   Req *req;
   Res *res;
   char buf[ressize];
@@ -184,9 +184,9 @@ Req *request(const char *dstip, const int dstport)
 ## return code in packet
 
 ```text
-90: request granted
+    90: request granted
 	91: request rejected or failed
-	92: request rejected becasue SOCKS server cannot connect to
+	92: request rejected becasue SOcKS server cannot connect to
 	    identd on the client
 	93: request rejected because the client program and identd
 	    report different user-ids
@@ -194,7 +194,7 @@ Req *request(const char *dstip, const int dstport)
 
 ## simulation HTTP HEAD
 
-```C
+```c
   char tmp[512];
   memset(tmp, 0, 512);
   snprintf(tmp, 512, "HEAD / HTTP/1.0\r\n"
