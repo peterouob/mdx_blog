@@ -5,3 +5,48 @@ date: 2024-6-27
 tags: ["rust","code","os"]
 ---
 
+## 引導啟動
+
+### 當我們啟動電腦時，主板內的ROW儲存的固件(firmware)將會運行，他將會負責電腦的加電自檢(power-on self test)和可用內存的檢測(available ram) 以及CPU和其他硬件的預加載，之後將尋找一個可引導的儲存介質(bootable disk)，並開始啟動內核(kernel)
+
+---
+
+### x86架構支持兩種固件標準：BIOS和UEFI，本系列將會以BIOS為標準
+
+## BIOS 啟動
+
+### 當電腦啟動時
+1. 主板上特殊的閃存中儲存的BIOS將會被加載
+2. BIOS將會加電自檢，初始化硬件，然後尋找可引導的儲存介質
+3. 當找到後，電腦控制全將轉移給引導程序(bootloader)
+   - 一段儲存在存儲介質的開頭，512byte的程序片段，大多數引導程序都不會超過512byte，所以通常情況下都會分為
+     1. 優先啟動，長度不超過512byte，儲存在介質開頭的第一階段引導程序(first stage bootloader)
+     2. 隨後加載，長度較第一段長，儲存在其他位置的第二階段引導程序(second stage bootloader)
+
+### 引導程序的作用
+1. 引導程序先決定內核位址，並將內核加載到內存
+2. 引導程序將CPU從16位元的實模式，切換到32位元的保護模式(protected mod)，最終再切換到64位元的長模式(long mod)，此時才能訪問所有64位元的內存器和主位元
+3. 引導程序能從BIOS查詢特定訊息，並轉傳到內核，如查詢和傳遞內存映射表 (memory map)
+
+## 使用Assembly編寫一個簡單的BIOS
+- 將會在畫面上顯示A到Z
+```asm
+mov ah, 0x0e
+mov al, 65
+int 0x10
+
+loop:
+inc al
+cmp al, 'Z' + 1
+je exit
+int 0x10
+jmp loop
+
+exit:
+jmp $
+times 510-($-$$) db 0 #內存啟動位址
+db 0x55, 0xaa
+
+```
+
+## Multiboot 標準
