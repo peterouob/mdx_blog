@@ -50,3 +50,78 @@ db 0x55, 0xaa
 ```
 
 ## Multiboot 標準
+
+## 最小內核
+
+### 安裝Rust Nightly
+1. stable
+2. beta
+3. nightly
+
+#### 安裝方法
+1. 使用rustup
+    ```bash
+    rustup override add nightly
+    ```
+2. 新增名為rust-toolchain的文件且內容為nightly
+
+### 目標配置清單
+- 使用目標配置清單是為了讓我們的系統不依賴底層配置系統
+- 編寫目標系統可以使用json格式完成
+```json
+{
+  "llvm-target": "x86_64-unknown-none",
+  "data-layout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+  "arch": "x86_64",
+  "target-endian": "little",
+  "target-pointer-width": "64",
+  "target-c-int-width": "32",
+  "os": "none",
+  "executables": true
+}
+```
+- 因為要在裸機上運行，因此llvm-target為none
+
+#### 添加額外配置
+- 不使用平台默認連接器，使用跨平台LLD鏈接器
+```json
+{
+  "linker-flavor": "ld.lld",
+  "linker": "rust-lld"
+}
+```
+- 為了處理中斷，我們需要禁用紅區(redzone)，避免榐指針優化進而破壞榐
+```json
+{
+  "disable-redzone": true
+}
+```
+##### 禁用紅區
+
+- 對內核禁用SIMD，提高性能表現(不代表內核不支援SIMD)
+```json
+{
+  "features": "-mmx,-sse,+soft-float"
+}
+```
+
+##### 禁用SIMD
+
+#### 完整目標配置清單
+```json
+{
+    "llvm-target": "x86_64-unknown-none",
+    "data-layout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+    "arch": "x86_64",
+    "target-endian": "little",
+    "target-pointer-width": "64",
+    "target-c-int-width": "32",
+    "os": "none",
+    "executables": true,
+    "linker-flavor": "ld.lld",
+    "linker": "rust-lld",
+    "panic-strategy": "abort",
+    "disable-redzone": true,
+    "features": "-mmx,-sse,+soft-float"
+}
+```
