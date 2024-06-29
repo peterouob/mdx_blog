@@ -29,10 +29,6 @@ export default function Home() {
                 GitHub
               </Link>
             </div>
-            <div className="flex mt-10 justify-center">
-              <Image src="/go.jpg" alt="target" width={500}
-                     height={500} className="object-fill h-96 w-192 rounded-lg" />
-            </div>
           </div>
         </section>
         <section className="container max-w-4xl py-6 lg:py-10 flex flex-col space-y-6 ">
