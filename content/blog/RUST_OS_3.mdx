@@ -7,6 +7,8 @@ tags: ["rust","code","os"]
 
 ## VGA字符模式
 
+### VGA字符緩衝區
+
 | Bit(s) | Value             |
 |--------|-------------------|
 | 0-7    | 	ASCII code point |
@@ -14,4 +16,147 @@ tags: ["rust","code","os"]
  | 12-14  | Background color  |
 | 15     | Bik               |
 
+- 要修改VGA字符緩衝區，可以投過memory-mapped IO 的方式讀取或寫入`0xb8000` 這個位址
 
+### 包裝到RUST模塊
+1. 新增名為vga_buffer.rs
+2. 在入口區塊use這個mod
+
+## 枚舉顏色
+- 使用rust中的enum來枚舉這些顏色以方便操作
+- 使用 `#[allow(dead_code)]` 可以避免編譯器對未使用變量產生錯誤
+- 使用derive讓他們使用多個trait，以遵循複製語意(Copy trait)，也可以讓他們被比較或打印
+- 使用 `#[repr(u8)]` 讓其中的元素都能固定以u8的形式儲存
+```rust
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Color {
+    Black = 0,
+    Blue = 1,
+    Green = 2,
+    Cyan = 3,
+    Red = 4,
+    Magenta = 5,
+    Brown = 6,
+    LightGray = 7,
+    DarkGray = 8,
+    LightBlue = 9,
+    LightGreen = 10,
+    LightCyan = 11,
+    LightRed = 12,
+    Pink = 13,
+    Yellow = 14,
+    White = 15,
+}
+```
+- 為了描述包含前景色或背景色，基於u8創建一個新類型
+- 確保和先前的枚舉有相同內存佈局(u8)，因此添加 `#[repr(transparent)]` 標記
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+struct ColorCode(u8);
+
+impl ColorCode {
+    fn new(foreground: Color, background: Color) -> ColorCode {
+        ColorCode((background as u8) << 4 | (foreground as u8))
+    }
+}
+```
+
+## 字符緩衝區
+
+- 使用 `#[repr(C)]` 標記以確保和照C語言約定的順序佈局他的成員變量，確保能映射到正確的內存片段
+- 對Buffer一樣使用 `#[repr(transparent}]` 來確保有相同的內存
+- 在Buffer這個struct中的chars成員類型皆為 `ScreenChar的二維陣列`
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+struct ScreenChar {
+    ascii_character: u8,
+    color_code: ColorCode,
+}
+
+const BUFFER_HEIGHT: usize = 25;
+const BUFFER_WIDTH: usize = 80;
+
+#[repr(transparent)]
+struct Buffer {
+    chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
+}
+```
+
+## 打印字符
+- 創建Writer類型，以便將字符寫在屏幕的最後一行，並在寫滿或遇到`\n`時將字符向上移位
+### 創建Writer類型
+
+- column_position 追蹤光標在最後一行的位址
+- color_code 決定了字符的前景和背景顏色
+- buffer 則是顯示宣告了這個變數的生命週期(告訴編譯器這個變數何時有效)，宣告為static時，代表只在這個程序運行期間有效，
+```rust
+pub struct Writer {
+    column_position: usize,
+    color_code: ColorCode,
+    buffer: &'static mut Buffer,
+}
+```
+- 我們使用match來分辨接收到的字串，如果為 `\n` 就會換行
+```rust
+impl Writer {
+    pub fn write_byte(&mut self, byte: u8) {
+        match byte {
+            b'\n' => self.new_line(),
+            byte => {
+                if self.column_position >= BUFFER_WIDTH {
+                    self.new_line();
+                }
+
+                let row = BUFFER_HEIGHT - 1;
+                let col = self.column_position;
+
+                let color_code = self.color_code;
+                self.buffer.chars[row][col] = ScreenChar {
+                    ascii_character: byte,
+                    color_code,
+                };
+                self.column_position += 1;
+            }
+        }
+    }
+
+    fn new_line(&mut self) {/* TODO */}
+}
+```
+#### 避免易失操作
+- 因為我們對於buffer的操作只有寫入而沒有讀出，此時編譯器會不知道我們在操作VGA緩衝區的內存，因此會忽略這些她認為沒有必要的操作
+
+##### 更改Buffer
+- `Volatile<>` 類型為一個泛型，確保不會因為通過普通的寫入操作，意外寫入數據
+```rust
+use volatile::Volatile;
+
+struct Buffer {
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+}
+```
+##### 修改writer方法
+- 使用writer來避免編譯器不再優化這個寫入操作
+```rust
+impl Writer {
+    pub fn write_byte(&mut self, byte: u8) {
+        match byte {
+            b'\n' => self.new_line(),
+            byte => {
+                ...
+
+                self.buffer.chars[row][col].write(ScreenChar {
+                    ascii_character: byte,
+                    color_code: color_code,
+                });
+                ...
+            }
+        }
+    }
+    ...
+}
+```
