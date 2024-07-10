@@ -261,3 +261,23 @@ int main(){
 ```
 
 ## Character arrays and pointers
+
+### How to Store String
+- 需要使用null字元當作結尾，以避免出現問題(攏字元)
+- `\0` C語言會自動分配儲存字節，但不算在長度裡面
+```c
+char C[20];
+C[0] = 'A';
+C[1] = 'B';
+C[2] = 'C';
+C[3] = '\0';
+int len = strlen(C);
+int size = sizeof(C);
+printf("len = %d,size = %d,%s",len,size,C);
+
+---
+len = 3
+size = 4
+ABC
+
+```
