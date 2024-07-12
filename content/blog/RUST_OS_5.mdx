@@ -77,10 +77,10 @@ extern "x86-interrupt" fn double_fault_handler(
     1. Divide-by-zero異常處理函數觸發page fault的會 **不會** 調用double fault異常
     2. Divide-by-zero異常處理函數觸發 general-protection fault就一定 **會** 觸發double fault異常
   
-| 一层异常                                                                                                        | 二层异常                                                                                                    |
-|-------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| Divide-by-zero,<br>Invalid TSS,<br>Segment Not Present,<br>Stack-Segment Fault,<br>General Protection Fault | Invalid TSS,<br>Segment Not Present,<br>Stack-Segment Fault,<br>General Protection Fault                |
-| Page Fault	                                                                                                 | Page Fault,<br>Invalid TSS,<br>Segment Not Present,<br>Stack-Segment Fault,<br>General Protection Fault |
+| 一层异常                                                                                                            | 二层异常                                                                                                    |
+|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Divide-by-zero,<br/>Invalid TSS,<br/>Segment Not Present,<br/>Stack-Segment Fault,<br/>General Protection Fault | Invalid TSS,<br />Segment Not Present,<br />Stack-Segment Fault,<br />General Protection Fault                |
+| Page Fault	                                                                                                     | Page Fault,<br />Invalid TSS,<br />Segment Not Present,<br />Stack-Segment Fault,<br />General Protection Fault |
 
 - 那麼根據上表，我們可以回答剛剛的假設中的前三個：  
   1. 如果 breakpoint 異常被觸發，但對應的處理函數被換出了內存，page fault 異常就會被觸發，並調用其對應的異常處理函數。 
