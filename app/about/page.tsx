@@ -28,7 +28,7 @@ export default async function AboutPage(){
                     Life is coding
                 </p>
             </div>
-                <AboutContent className="prose dark:prose-invert flex gap-6 flex-wrap" />
+                <AboutContent className="prose dark:prose-invert flex gap-2 flex-wrap" />
         </div>
     </div>
 }
