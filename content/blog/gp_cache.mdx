@@ -6,13 +6,104 @@ tags: ["code","golang"]
 ---
 
 # 前言
+- 本篇主要參考[7天用Go从零实现分布式缓存GeeCache](https://geektutu.com/post/geecache.html)，主要用來當作筆記以供學習
+## 為什麼需要緩存?
+- 請求網頁時，網頁會將第一次請求的內容存入緩存中(通常為key-value)，以後再次訪問時，就可以直接從緩存中提取，從而降低載入時間
+### 本地緩存 vs 分布式緩存
+- 本地緩存
+  - 這邊的本地緩存通常指的為應用中的緩存組件，最大的優點就是應用和cache在同一個進程裡面，不會發生過多的網路開銷．缺點就是沒辦法共享緩存，個應用或集群都要維護自己的緩存，從而造成大量的開銷
+- 分布式緩存
+  - 指的是應用和組件分離的緩存服務，優點就是緩存為一個獨立的應用，和本地分離，因此可以直接共享緩存
+## LRU緩存淘汰政策
+- 核心思想就是維護一個隊列，如果該條紀錄已經被訪問過了，就會到隊尾，那麼隊首變為最少訪問的紀錄，可以直接淘汰
+- 使用go語言中的`container/list`當作map中的值，該list為一個雙向隊列
+- entry是雙向隊列的數據，這麼做的目的是當要淘汰隊列的首節點時，使用key從字典中映射即可
+```go
+type Cache struct {
+	maxBytes  int64
+	nbytes    int64
+	ll        *list.List
+	cache     map[string]*list.Element
+	onEvicted func(key string, value Value)
+}
 
-## Why
+type entry struct {
+	key   string
+	value Value
+}
 
-## 分布式系統
+type Value interface {
+	Len() int
+}
 
-### 一至性哈希算法
+func (c *Cache) Len() int {
+	return c.ll.Len()
+}
 
-## 防止緩存擊穿
+func New(maxBytes int64, onEvicted func(string, Value)) *Cache {
+	return &Cache{
+		maxBytes:  maxBytes,
+		ll:        list.New(),
+		cache:     make(map[string]*list.Element),
+		onEvicted: onEvicted,
+	}
+} 
+```
+### 查找功能
+- 如果鍵對應的值存在，將該節點移動到隊尾，並返回值
+- `c.ll.MoveToFront(ele)` 即為將值移動到隊尾(在這裡的front代表隊尾)
+```go
+func (c *Cache) Get(key string) (value Value, ok bool) {
+	if ele, ok := c.cache[key]; ok {
+		c.ll.MoveToFront(ele)
+		kv := ele.Value.(*entry)
+		return kv.value, true
+	}
+	return
+} 
+```
+### 刪除功能
+- 實際上為淘汰最少訪問的首位節點，從linklist中刪除
+- 使用delete從字典中刪除該key
+- nbytes更新為當前正確的數值
+- 如果onEvicted不為nil的話，調用該函數
+```go
+func (c *Cache) RemoveOldest() {
+	ele := c.ll.Back()
+	if ele != nil {
+		c.ll.Remove(ele)
+		kv := ele.Value.(*entry)
+		delete(c.cache, kv.key)
+		c.nbytes -= int64(len(kv.key)) + int64(kv.value.Len())
+		if c.onEvicted != nil {
+			c.onEvicted(kv.key, kv.value)
+		}
+	}
+}
+```
+### 新增
+- 如果key存在的話，更新對應的值，並將該節點移動到隊尾
+- 不存在的話首先在隊尾新增該節點，並且新增和map的映射關係
+- 更新nbytes後如果超過最大值的話，調用Remove函數
+```go
+func (c *Cache) Add(key string, value Value) {
+	if ele, ok := c.cache[key]; ok {
+		c.ll.MoveToFront(ele)
+		kv := ele.Value.(*entry)
+		c.nbytes -= int64(len(kv.key)) + int64(kv.value.Len())
+		kv.value = value
+	} else {
+		ele := c.ll.PushFront(&entry{key, value})
+		c.cache[key] = ele
+		c.nbytes += int64(len(key)) + int64(value.Len())
+	}
+	for c.maxBytes != 0 && c.maxBytes < c.nbytes {
+		c.RemoveOldest()
+	}
+}
+```
+## 分布式緩存算法
+
+## 緩存問題和解決方案
 
 ## 使用Protocol通信
