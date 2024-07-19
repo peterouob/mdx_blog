@@ -103,7 +103,85 @@ func (c *Cache) Add(key string, value Value) {
 }
 ```
 ## 分布式緩存算法
+### 一至性哈希
+- 將key映射到`2^32`的空間中，將這個數字首尾相連，行程一個環
+  - 計算節點/機器的哈希值，放置在環上
+  - 計算key的哈希值，放置在環上，順時針尋找到的第一個節點，就是應選取的節點/機器
+#### 傾斜問題
+- 如果服務器節點過少，很容易都對應到同個節點，造成環存節點間負載不均衡
+- 使用虛擬節點的概念解決
+  - 計算虛擬節點上的Hash值，放置在環上
+  - 計算key的Hash值，在環上順時針尋找對應選取得虛擬節點例如`peer2-1`對應的就是真實節點`peer2`
 
+## 實現一至性哈希
+### 初始化
+- 定義函數類型的Hash，採取依賴注入的方式，允許用來替換成自定義的Hash函數，默認為ChecksumIEEE算法
+- Map是一至性哈希算法的主數據結構，包含
+  1. Hash函數 hash
+  2. 虛擬節點倍數 replicas
+  3. 虛擬節點和真實節點的映射表 hashMap，key是虛擬節點的哈希值，值是真實節點的名稱
+- 構造函數New允許自定義虛擬節點倍數和Hash函數
+```go
+type Hash func(data []byte) uint32
+
+// Map constains all hashed keys
+type Map struct {
+	hash     Hash
+	replicas int
+	keys     []int // Sorted
+	hashMap  map[int]string
+}
+
+// New creates a Map instance
+func New(replicas int, fn Hash) *Map {
+	m := &Map{
+		replicas: replicas,
+		hash:     fn,
+		hashMap:  make(map[int]string),
+	}
+	if m.hash == nil {
+		m.hash = crc32.ChecksumIEEE
+	}
+	return m
+} 
+```
+### 新增真實節點/機器
+- Add函數允許傳入0或多個真實節點的名稱
+- 對每一個真實節點key，對應創建`m.replicas`個虛擬節點
+- 使用`m.hash()`計算虛擬節點的哈希值，再使用append添加到環上
+- 在hashMap中增加虛擬節點和真實節點的映射關西
+- 依照環上哈希排序
+```go
+func (m *Map) Add(keys ...string) {
+	for _, key := range keys {
+		for i := 0; i < m.replicas; i++ {
+			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
+			m.keys = append(m.keys, hash)
+			m.hashMap[hash] = key
+		}
+	}
+	sort.Ints(m.keys)
+}
+```
+### 選擇節點
+- 計算key的哈希值
+- 順時針找到第一個匹配虛擬節點的下標idx，從`m.keys`中或去對應的哈希值，如果len相同，說明選擇第一個，因為keys是一個環的結構
+- 透過hashMap映射得到真實節點
+```go
+func (m *Map) Get(key string) string {
+	if len(m.keys) == 0 {
+		return ""
+	}
+
+	hash := int(m.hash([]byte(key)))
+	// Binary search for appropriate replica.
+	idx := sort.Search(len(m.keys), func(i int) bool {
+		return m.keys[i] >= hash
+	})
+
+	return m.hashMap[m.keys[idx%len(m.keys)]]
+} 
+```
 ## 緩存問題和解決方案
 
 ## 使用Protocol通信
