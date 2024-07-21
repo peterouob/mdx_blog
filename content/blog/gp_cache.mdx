@@ -183,5 +183,77 @@ func (m *Map) Get(key string) string {
 } 
 ```
 ## 緩存問題和解決方案
+- 緩存雪崩
+  - 緩存在同一時刻全部失效，遭成瞬間DB請求量大，壓力驟增引起雪崩．通常因為緩存服務器當機，緩存的key設置相同過期時間導致
+- 緩存擊穿
+  - 一個存在的key在緩存過期的那一刻，同時有大量的請求，這些請求都會擊穿DB，造成順時DB請求量大，壓力驟增
+- 緩存穿透
+  - 查詢一個不存在的數據，因為不存在則不會寫入緩存，所以美以都會請求DB，造成瞬間流量過大，穿透DB造成當機
+### 實現解決方法
+- 創建call和group類型
+- call代表正在進行或已經結束的請求
+- Group管理不同key的請求
+```go
+type call struct {
+	wg  sync.WaitGroup
+	val interface{}
+	err error
+}
 
+type Group struct {
+	mu sync.Mutex       // protects m
+	m  map[string]*call
+}
+```
+- Do方法的作用為針對相同key，無論Do被調用多少次，函數fn都只會被調用一次，等待fn調用結束，return返回值或error
+- 使用延遲初始化`g.m`以提高內存使用效率
+```go
+func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
+	g.mu.Lock()
+	if g.m == nil {
+		g.m = make(map[string]*call)
+	}
+	if c, ok := g.m[key]; ok {
+		g.mu.Unlock()
+		c.wg.Wait()
+		return c.val, c.err
+	}
+	c := new(call)
+	c.wg.Add(1)
+	g.m[key] = c
+	g.mu.Unlock()
+
+	c.val, c.err = fn()
+	c.wg.Done()
+
+	g.mu.Lock()
+	delete(g.m, key)
+	g.mu.Unlock()
+
+	return c.val, c.err
+}
+```
+#### 重點地方
+- `g.mu`是保護Group的成員變量m不被併發讀寫加上鎖
+```go
+func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
+	if c, ok := g.m[key]; ok {
+		c.wg.Wait()   //如果請求正在進行中則等待
+		return c.val, c.err //請求結束返回結果 
+	}
+	c := new(call)
+	c.wg.Add(1)       //發起請求前保護鎖
+	g.m[key] = c      //添加g.m,表明key已經有對應的請求在處理
+
+	c.val, c.err = fn() //調用fn發起請求
+	c.wg.Done()         //請求結束
+
+    delete(g.m, key)    //更新 g.m
+    
+	return c.val, c.err //返回结果
+}
+```
+### 使用
+- 修改geecache中的Group，他加成員變量loader並更新構建函數NewGroup
+- 修改load函數，將原來的load邏輯使用`g.loader.Do`包裹，確保併發場景下針對同個key，load只會調用一次
 ## 使用Protocol通信
