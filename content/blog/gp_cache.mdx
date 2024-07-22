@@ -256,4 +256,46 @@ func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, err
 ### 使用
 - 修改geecache中的Group，他加成員變量loader並更新構建函數NewGroup
 - 修改load函數，將原來的load邏輯使用`g.loader.Do`包裹，確保併發場景下針對同個key，load只會調用一次
+```go
+type Group struct {
+	name      string
+	getter    Getter
+	mainCache cache
+	peers     PeerPicker
+	// use singleflight.Group to make sure that
+	// each key is only fetched once
+	loader *singleflight.Group
+}
+
+func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
+    // ...
+	g := &Group{
+        // ...
+		loader:    &singleflight.Group{},
+	}
+	return g
+}
+
+func (g *Group) load(key string) (value ByteView, err error) {
+	// each key is only fetched once (either locally or remotely)
+	// regardless of the number of concurrent callers.
+	viewi, err := g.loader.Do(key, func() (interface{}, error) {
+		if g.peers != nil {
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if value, err = g.getFromPeer(peer, key); err == nil {
+					return value, nil
+				}
+				log.Println("[GeeCache] Failed to get from peer", err)
+			}
+		}
+
+		return g.getLocally(key)
+	})
+
+	if err == nil {
+		return viewi.(ByteView), nil
+	}
+	return
+}
+```
 ## 使用Protocol通信
